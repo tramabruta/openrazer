@@ -1559,6 +1559,154 @@ static ssize_t razer_attr_read_mouse_dpi(struct device *dev, struct device_attri
     return sprintf(buf, "%u:%u\n", dpi_x, dpi_y);
 }
 
+/**
+ * Write device file "scroll_mode"
+ *
+ * Set scroll wheel mode on the device
+ *
+ * Status Trans Packet Proto DataSize Class CMD Args
+ * 00     1f    0000   00    02       02    14  0100    | SET SCROLL WHEEL ACCELERATION (VARSTR, TACTILE)
+ * 00     1f    0000   00    02       02    14  0101    | SET SCROLL WHEEL ACCELERATION (VARSTR, FREESPIN)
+ */
+static ssize_t razer_attr_write_scroll_mode(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+    struct razer_mouse_device *device = dev_get_drvdata(dev);
+    struct razer_report report = get_razer_report(0x02, 0x14, 0x02);
+    unsigned int scroll_mode;
+
+    if (kstrtouint(buf, 0, &scroll_mode) < 0 || scroll_mode > 1)
+        return -EINVAL;
+
+    report.transaction_id.id = 0x1f;
+    report.arguments[0] = VARSTORE;
+    report.arguments[1] = scroll_mode;
+
+    mutex_lock(&device->lock);
+    razer_send_payload(device->usb_dev, &report);
+    mutex_unlock(&device->lock);
+
+    return count;
+}
+
+/**
+ * Read device file "scroll_mode"
+ *
+ * Get scroll wheel mode from the device
+ */
+static ssize_t razer_attr_read_scroll_mode(struct device *dev, struct device_attribute *attr, char *buf)
+{
+    struct usb_interface *intf = to_usb_interface(dev->parent);
+    struct usb_device *usb_dev = interface_to_usbdev(intf);
+    struct razer_report report = get_razer_report(0x02, 0x94, 0x02);
+    struct razer_report response_report = {0};
+
+    report.transaction_id.id = 0x1f;
+    report.arguments[0] = VARSTORE;
+
+    response_report = razer_send_payload(usb_dev, &report);
+
+    return sprintf(buf, "%d\n", response_report.arguments[1]);
+}
+
+/**
+ * Write device file "scroll_acceleration"
+ *
+ * Set scroll wheel acceleration on/off on the device
+ *
+ * Status Trans Packet Proto DataSize Class CMD Args
+ * 00     1f    0000   00    02       02    16  0101    | SET SCROLL WHEEL ACCELERATION (VARSTR, ON)
+ * 00     1f    0000   00    02       02    16  0100    | SET SCROLL WHEEL ACCELERATION (VARSTR, OFF)
+ */
+static ssize_t razer_attr_write_scroll_acceleration(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+    struct razer_mouse_device *device = dev_get_drvdata(dev);
+    struct razer_report report = get_razer_report(0x02, 0x16, 0x02);
+    bool acceleration;
+
+    if (kstrtobool(buf, &acceleration) < 0)
+        return -EINVAL;
+
+    report.transaction_id.id = 0x1f;
+    report.arguments[0] = VARSTORE;
+    report.arguments[1] = acceleration;
+
+    mutex_lock(&device->lock);
+    razer_send_payload(device->usb_dev, &report);
+    mutex_unlock(&device->lock);
+
+    return count;
+}
+
+/**
+ * Read device file "scroll_acceleration"
+ *
+ * Get scroll wheel acceleration state from the device
+ */
+static ssize_t razer_attr_read_scroll_acceleration(struct device *dev, struct device_attribute *attr, char *buf)
+{
+    struct usb_interface *intf = to_usb_interface(dev->parent);
+    struct usb_device *usb_dev = interface_to_usbdev(intf);
+    struct razer_report report = get_razer_report(0x02, 0x96, 0x02);
+    struct razer_report response_report = {0};
+
+    report.transaction_id.id = 0x1f;
+    report.arguments[0] = VARSTORE;
+
+    response_report = razer_send_payload(usb_dev, &report);
+
+    return sprintf(buf, "%d\n", response_report.arguments[1]);
+}
+
+/**
+ * Write device file "scroll_smart_reel"
+ *
+ * Set scroll wheel "smart reel" on/off on the device.
+ * Smart reel automatically changes scroll wheel mode from tactile to free spin and back depending on scroll speed.
+ *
+ * Status Trans Packet Proto DataSize Class CMD Args
+ * 00     1f    0000   00    02       02    17  0101    | SET SCROLL WHEEL SMART REEL (VARSTR, ON)
+ * 00     1f    0000   00    02       02    17  0100    | SET SCROLL WHEEL SMART REEL (VARSTR, OFF)
+ */
+static ssize_t razer_attr_write_scroll_smart_reel(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+    struct razer_mouse_device *device = dev_get_drvdata(dev);
+    struct razer_report report = get_razer_report(0x02, 0x17, 0x02);
+    bool smart_reel;
+
+    if (kstrtobool(buf, &smart_reel) < 0)
+        return -EINVAL;
+
+    report.transaction_id.id = 0x1f;
+    report.arguments[0] = VARSTORE;
+    report.arguments[1] = smart_reel;
+
+    mutex_lock(&device->lock);
+    razer_send_payload(device->usb_dev, &report);
+    mutex_unlock(&device->lock);
+
+    return count;
+}
+
+/**
+ * Read device file "scroll_smart_reel"
+ *
+ * Get scroll wheel "smart reel" state from the device
+ */
+static ssize_t razer_attr_read_scroll_smart_reel(struct device *dev, struct device_attribute *attr, char *buf)
+{
+    struct usb_interface *intf = to_usb_interface(dev->parent);
+    struct usb_device *usb_dev = interface_to_usbdev(intf);
+    struct razer_report report = get_razer_report(0x02, 0x97, 0x02);
+    struct razer_report response_report = {0};
+
+    report.transaction_id.id = 0x1f;
+    report.arguments[0] = VARSTORE;
+
+    response_report = razer_send_payload(usb_dev, &report);
+
+    return sprintf(buf, "%d\n", response_report.arguments[1]);
+}
+
 static ssize_t razer_attr_write_tilt_hwheel(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
     struct razer_mouse_device *device = dev_get_drvdata(dev);
@@ -3774,6 +3922,10 @@ static DEVICE_ATTR(device_mode,               0660, razer_attr_read_device_mode,
 static DEVICE_ATTR(device_serial,             0440, razer_attr_read_get_serial,            NULL);
 static DEVICE_ATTR(device_idle_time,          0660, razer_attr_read_get_idle_time,         razer_attr_write_set_idle_time);
 
+static DEVICE_ATTR(scroll_mode,               0660, razer_attr_read_scroll_mode,           razer_attr_write_scroll_mode);
+static DEVICE_ATTR(scroll_acceleration,       0660, razer_attr_read_scroll_acceleration,   razer_attr_write_scroll_acceleration);
+static DEVICE_ATTR(scroll_smart_reel,         0660, razer_attr_read_scroll_smart_reel,     razer_attr_write_scroll_smart_reel);
+
 static DEVICE_ATTR(tilt_hwheel,               0660, razer_attr_read_tilt_hwheel,           razer_attr_write_tilt_hwheel);
 static DEVICE_ATTR(tilt_repeat,               0660, razer_attr_read_tilt_repeat,           razer_attr_write_tilt_repeat);
 static DEVICE_ATTR(tilt_repeat_delay,         0660, razer_attr_read_tilt_repeat_delay,     razer_attr_write_tilt_repeat_delay);
@@ -4413,6 +4565,9 @@ static int razer_mouse_probe(struct hid_device *hdev, const struct hid_device_id
             CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_poll_rate);
             CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_dpi);
             CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_dpi_stages);
+            CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_scroll_mode);
+            CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_scroll_acceleration);
+            CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_scroll_smart_reel);
             CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_tilt_hwheel);
             CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_tilt_repeat_delay);
             CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_tilt_repeat);
@@ -5043,6 +5198,9 @@ static void razer_mouse_disconnect(struct hid_device *hdev)
             device_remove_file(&hdev->dev, &dev_attr_poll_rate);
             device_remove_file(&hdev->dev, &dev_attr_dpi);
             device_remove_file(&hdev->dev, &dev_attr_dpi_stages);
+            device_remove_file(&hdev->dev, &dev_attr_scroll_mode);
+            device_remove_file(&hdev->dev, &dev_attr_scroll_acceleration);
+            device_remove_file(&hdev->dev, &dev_attr_scroll_smart_reel);
             device_remove_file(&hdev->dev, &dev_attr_tilt_hwheel);
             device_remove_file(&hdev->dev, &dev_attr_tilt_repeat_delay);
             device_remove_file(&hdev->dev, &dev_attr_tilt_repeat);
